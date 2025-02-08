@@ -4,11 +4,8 @@ import '../widgets/todo_item.dart';
 import '../widgets/add_todo_dialog.dart';
 import '../widgets/stats_dialog.dart';
 
-enum TodoSort { createdDesc, createdAsc, deadlineAsc, deadlineDesc }
-enum TodoFilter { all, active, completed, overdue }
-
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -16,73 +13,58 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final List<Todo> _todos = [];
-  TodoSort _currentSort = TodoSort.createdDesc;
-  TodoFilter _currentFilter = TodoFilter.all;
-
-  List<Todo> get _filteredAndSortedTodos {
-    List<Todo> filteredTodos = [..._todos];
-
-    // Apply filter
-    switch (_currentFilter) {
-      case TodoFilter.active:
-        filteredTodos = filteredTodos.where((todo) => !todo.isCompleted).toList();
-        break;
-      case TodoFilter.completed:
-        filteredTodos = filteredTodos.where((todo) => todo.isCompleted).toList();
-        break;
-      case TodoFilter.overdue:
-        filteredTodos = filteredTodos.where((todo) => todo.isOverdue).toList();
-        break;
-      default:
-        break;
-    }
-
-    // Apply sort
-    switch (_currentSort) {
-      case TodoSort.createdDesc:
-        filteredTodos.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        break;
-      case TodoSort.createdAsc:
-        filteredTodos.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-        break;
-      case TodoSort.deadlineAsc:
-        filteredTodos.sort((a, b) => a.deadline.compareTo(b.deadline));
-        break;
-      case TodoSort.deadlineDesc:
-        filteredTodos.sort((a, b) => b.deadline.compareTo(a.deadline));
-        break;
-    }
-
-    return filteredTodos;
-  }
+  int _selectedFilterIndex = 0;
 
   void _addTodo(String title, DateTime deadline) {
     setState(() {
       _todos.add(Todo(
         id: DateTime.now().toString(),
         title: title,
+        deadline: deadline,
         isCompleted: false,
         createdAt: DateTime.now(),
-        deadline: deadline,
       ));
     });
   }
 
-  void _toggleTodo(String id) {
+  void _editTodo(String id, String newTitle, DateTime newDeadline) {
     setState(() {
-      final todoIndex = _todos.indexWhere((todo) => todo.id == id);
-      _todos[todoIndex].isCompleted = !_todos[todoIndex].isCompleted;
-      _todos[todoIndex].completedAt = _todos[todoIndex].isCompleted ? DateTime.now() : null;
+      final index = _todos.indexWhere((todo) => todo.id == id);
+      if (index != -1) {
+        _todos[index] = _todos[index].copyWith(
+          title: newTitle,
+          deadline: newDeadline,
+        );
+      }
     });
   }
 
-  void _deleteTodo(String id) {
+  void _toggleTodo(String id, bool newValue) {
     setState(() {
-      _todos.removeWhere((todo) => todo.id == id);
+      final index = _todos.indexWhere((todo) => todo.id == id);
+      if (index != -1) {
+        _todos[index] = _todos[index].copyWith(isCompleted: newValue);
+      }
     });
   }
 
-  void _showStats() {
+  List<Todo> _getFilteredTodos() {
+    if (_selectedFilterIndex == 1) {
+      return _todos.where((todo) => todo.isCompleted).toList();
+    } else if (_selectedFilterIndex == 2) {
+      return _todos.where((todo) => todo.isOverdue).toList();
+    }
+    return _todos;
+  }
+
+  void _showAddTodoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AddTodoDialog(onAdd: _addTodo),
+    );
+  }
+
+  void _showStatsDialog() {
     showDialog(
       context: context,
       builder: (context) => StatsDialog(todos: _todos),
@@ -92,126 +74,53 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('My Tasks'),
+        title: const Text("To-Do List"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.analytics_outlined),
-            onPressed: _showStats,
-          ),
-          PopupMenuButton<TodoSort>(
-            icon: const Icon(Icons.sort_outlined),
-            onSelected: (TodoSort sort) {
-              setState(() {
-                _currentSort = sort;
-              });
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: TodoSort.createdDesc,
-                child: Text('Newest First'),
-              ),
-              const PopupMenuItem(
-                value: TodoSort.createdAsc,
-                child: Text('Oldest First'),
-              ),
-              const PopupMenuItem(
-                value: TodoSort.deadlineAsc,
-                child: Text('Deadline: Nearest'),
-              ),
-              const PopupMenuItem(
-                value: TodoSort.deadlineDesc,
-                child: Text('Deadline: Farthest'),
-              ),
-            ],
+            icon: const Icon(Icons.bar_chart),
+            onPressed: _showStatsDialog,
           ),
         ],
       ),
       body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip(TodoFilter.all, 'All'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(TodoFilter.active, 'Active'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(TodoFilter.completed, 'Completed'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(TodoFilter.overdue, 'Overdue'),
-                ],
-              ),
-            ),
+          ToggleButtons(
+            isSelected: [
+              _selectedFilterIndex == 0,
+              _selectedFilterIndex == 1,
+              _selectedFilterIndex == 2,
+            ],
+            onPressed: (index) {
+              setState(() => _selectedFilterIndex = index);
+            },
+            borderRadius: BorderRadius.circular(10),
+            selectedColor: Colors.white,
+            color: Colors.black,
+            fillColor: Colors.blue,
+            children: const [
+              Padding(padding: EdgeInsets.all(8), child: Text("All")),
+              Padding(padding: EdgeInsets.all(8), child: Text("Completed")),
+              Padding(padding: EdgeInsets.all(8), child: Text("Overdue")),
+            ],
           ),
           Expanded(
-            child: _filteredAndSortedTodos.isEmpty
-                ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.task_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No tasks yet',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            )
-                : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _filteredAndSortedTodos.length,
-              itemBuilder: (context, index) {
+            child: ListView(
+              children: _getFilteredTodos().map((todo) {
                 return TodoItem(
-                  todo: _filteredAndSortedTodos[index],
+                  todo: todo,
                   onToggle: _toggleTodo,
-                  onDelete: _deleteTodo,
+                  onDelete: (id) => setState(() => _todos.removeWhere((t) => t.id == id)),
+                  onEdit: _editTodo,
                 );
-              },
+              }).toList(),
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => AddTodoDialog(onAdd: _addTodo),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Add Task'),
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(TodoFilter filter, String label) {
-    return FilterChip(
-      label: Text(label),
-      selected: _currentFilter == filter,
-      onSelected: (selected) {
-        setState(() {
-          _currentFilter = filter;
-        });
-      },
-      showCheckmark: false,
-      selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-      labelStyle: TextStyle(
-        color: _currentFilter == filter
-            ? Theme.of(context).colorScheme.primary
-            : Colors.black87,
-        fontWeight: _currentFilter == filter ? FontWeight.w600 : FontWeight.normal,
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddTodoDialog,
+        child: const Icon(Icons.add),
       ),
     );
   }

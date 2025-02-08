@@ -4,15 +4,76 @@ import '../models/todo.dart';
 
 class TodoItem extends StatelessWidget {
   final Todo todo;
-  final Function(String) onToggle;
+  final Function(String, bool) onToggle;
   final Function(String) onDelete;
+  final Function(String, String, DateTime) onEdit;
 
   const TodoItem({
     super.key,
     required this.todo,
     required this.onToggle,
     required this.onDelete,
+    required this.onEdit,
   });
+
+  void _editTask(BuildContext context) {
+    final TextEditingController _textController = TextEditingController(text: todo.title);
+    DateTime _selectedDate = todo.deadline;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Edit Task"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _textController,
+                    decoration: const InputDecoration(labelText: "Task Name"),
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                      );
+
+                      if (pickedDate != null) {
+                        setState(() => _selectedDate = pickedDate);
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_today),
+                    label: Text(DateFormat('E, d MMM y').format(_selectedDate)),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_textController.text.isNotEmpty) {
+                      onEdit(todo.id, _textController.text, _selectedDate);
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,10 +97,11 @@ class TodoItem extends StatelessWidget {
               children: [
                 Checkbox(
                   value: todo.isCompleted,
-                  onChanged: (_) => onToggle(todo.id),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+                  onChanged: (newValue) {
+                    if (newValue != null) {
+                      onToggle(todo.id, newValue);
+                    }
+                  },
                 ),
                 Expanded(
                   child: Text(
@@ -52,8 +114,11 @@ class TodoItem extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  color: Colors.red[300],
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: () => _editTask(context),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
                   onPressed: () => onDelete(todo.id),
                 ),
               ],
@@ -61,11 +126,7 @@ class TodoItem extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(
-                  Icons.access_time,
-                  size: 14,
-                  color: Colors.grey,
-                ),
+                const Icon(Icons.access_time, size: 14, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
                   dateFormat.format(todo.deadline),
@@ -75,23 +136,6 @@ class TodoItem extends StatelessWidget {
                     fontWeight: todo.isOverdue ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
-                if (todo.isOverdue && !todo.isCompleted)
-                  Container(
-                    margin: const EdgeInsets.only(left: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'OVERDUE',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.red[700],
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ],

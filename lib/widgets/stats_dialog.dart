@@ -12,13 +12,8 @@ class StatsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final completedTodos = todos.where((todo) => todo.isCompleted).toList();
-    final overdueTodos = todos.where((todo) => todo.isOverdue).toList();
 
-    final avgCompletionTime = completedTodos.isEmpty
-        ? Duration.zero
-        : completedTodos
-        .map((todo) => todo.completionTime!)
-        .reduce((a, b) => a + b) ~/ completedTodos.length;
+
 
     return Dialog(
       shape: RoundedRectangleBorder(
@@ -46,18 +41,6 @@ class StatsDialog extends StatelessWidget {
               Icons.check_circle_outline,
               'Completed',
               completedTodos.length.toString(),
-            ),
-            _buildStatItem(
-              context,
-              Icons.warning_outlined,
-              'Overdue',
-              overdueTodos.length.toString(),
-            ),
-            _buildStatItem(
-              context,
-              Icons.timer_outlined,
-              'Average Completion Time',
-              '${avgCompletionTime.inHours}h ${avgCompletionTime.inMinutes % 60}m',
             ),
             _buildStatItem(
               context,

@@ -14,25 +14,21 @@ class AddTodoDialog extends StatefulWidget {
 }
 
 class _AddTodoDialogState extends State<AddTodoDialog> {
-  // Tambahkan controller untuk TextField
   late TextEditingController _textController;
-
-  // Tambahkan variable untuk menyimpan tanggal yang dipilih
   late DateTime _selectedDate;
 
   @override
   void initState() {
     super.initState();
     _textController = TextEditingController();
-    _selectedDate = DateTime.now(); // Set tanggal default ke waktu sekarang
+    _selectedDate = DateTime.now();
   }
 
   @override
   void dispose() {
-    _textController.dispose(); // Bersihkan controller saat widget di dispose
+    _textController.dispose();
     super.dispose();
   }
-
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -74,10 +70,7 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Add New Task',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Add New Task', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             TextField(
               controller: _textController,
@@ -96,9 +89,7 @@ class _AddTodoDialogState extends State<AddTodoDialog> {
             OutlinedButton.icon(
               onPressed: () => _selectDate(context),
               icon: const Icon(Icons.calendar_today, size: 18),
-              label: Text(
-                DateFormat('E, d MMM y • HH:mm').format(_selectedDate),
-              ),
+              label: Text(DateFormat('E, d MMM y • HH:mm').format(_selectedDate)),
               style: OutlinedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

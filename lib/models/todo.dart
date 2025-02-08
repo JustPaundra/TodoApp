@@ -1,31 +1,27 @@
 class Todo {
-  String id;
-  String title;
-  bool isCompleted;
-  DateTime createdAt;
-  DateTime? completedAt;
-  DateTime deadline;
+  final String id;
+  final String title;
+  final DateTime deadline;
+  late final bool isCompleted;
+  final DateTime createdAt;
 
   Todo({
     required this.id,
     required this.title,
+    required this.deadline,
     required this.isCompleted,
     required this.createdAt,
-    this.completedAt,
-    required this.deadline,
   });
 
-  Duration? get completionTime {
-    if (completedAt != null) {
-      return completedAt!.difference(createdAt);
-    }
-    return null;
+  Todo copyWith({String? title, DateTime? deadline, bool? isCompleted}) {
+    return Todo(
+      id: id,
+      title: title ?? this.title,
+      deadline: deadline ?? this.deadline,
+      isCompleted: isCompleted ?? this.isCompleted,
+      createdAt: createdAt,
+    );
   }
 
-  bool get isOverdue {
-    if (!isCompleted && DateTime.now().isAfter(deadline)) {
-      return true;
-    }
-    return false;
-  }
+  bool get isOverdue => !isCompleted && deadline.isBefore(DateTime.now());
 }
